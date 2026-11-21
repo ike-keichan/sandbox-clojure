@@ -1,4 +1,4 @@
-# clojure-webapi-sandbox
+# sandbox-clojure
 
 Clojure（Ring、Compojure）で Web API を作る練習用のプロジェクト。
 
@@ -12,7 +12,7 @@ Clojure（Ring、Compojure）で Web API を作る練習用のプロジェクト
 | 時期 | 2024年9月 |
 | 言語 | Clojure |
 
-Clojure で、タスクを管理する Web API を作る練習である。HTTP の処理に Ring、ルーティングに Compojure、データベースに MySQL を使い、Docker Compose で動かす。[fastapi-sandbox](https://github.com/ike-keichan/fastapi-sandbox) で作った API と同じ題材を、Clojure で書いている。
+Clojure で、タスクを管理する Web API を作る練習である。HTTP の処理に Ring、ルーティングに Compojure、データベースに MySQL を使い、Docker Compose で動かす。[sandbox-fastapi](https://github.com/ike-keichan/sandbox-fastapi) で作った API と同じ題材を、Clojure で書いている。
 
 用意している API は、次のとおりである。
 
