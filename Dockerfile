@@ -1,10 +1,9 @@
-FROM clojure:openjdk-17-lein
+FROM clojure:temurin-25-lein
 
 WORKDIR /app
 
 COPY project.clj /app/
-COPY src /app/src
 
-RUN lein deps;
+RUN lein deps
 
 CMD ["lein", "run"]

@@ -1,6 +1,6 @@
 (ns api.hello.core
-  (:require [compojure.core :refer [defroutes GET]]
-            [api.hello.handler :refer [get-hello-handler]]))
+  (:require [api.hello.handler :refer [get-hello-handler]]
+            [compojure.core :refer [GET defroutes]]))
 
 ;; hello APIのルーティング
 (defroutes hello-routes

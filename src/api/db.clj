@@ -1,24 +1,30 @@
 (ns api.db
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.tools.logging :as log]))
+  (:require [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as result-set]))
 
-;; DBの情報
-(def db-spec {:classname "com.mysql.cj.jdbc.Driver"
-              :subprotocol "mysql"
-              :subname "//db:3306/demo" 
-              :user "root"
-              :password ""
-              :useSSL false
-              :useUnicode true
-              :characterEncoding "utf8"
-              :useOldAliasMetadataBehavior true
-              })
+;; 環境変数を読む関数。設定されていなければ、既定の値を返す。
+(defn- env [name default]
+  (or (System/getenv name) default))
 
-;; DB接続する関数
-(defn init-db []
-  (try
-    (jdbc/execute! db-spec
-      ["CREATE TABLE IF NOT EXISTS tasks (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), `dueDate` DATE, `isDone` BOOLEAN)"])
-    (log/info "Table 'tasks' initialized successfully.")
-    (catch Exception e
-      (log/error e "Error initializing the 'tasks' table."))))
+;; DBの接続先。環境変数で上書きできる（docker-compose.yml を参照）。
+(def db-spec {:dbtype "mysql"
+              :host (env "DB_HOST" "db")
+              :port (parse-long (env "DB_PORT" "3306"))
+              :dbname (env "DB_NAME" "demo")
+              :user (env "DB_USER" "root")
+              :password (env "DB_PASSWORD" "")})
+
+;; DB接続用のデータソース
+;; テストでは、別のデータソースに差し替える。
+(def ^:dynamic *datasource* (jdbc/get-datasource db-spec))
+
+;; 結果の取り出し方。列の名前を、そのままキーワードにしたマップで受け取る（例: :due_date）。
+(def ^:private options {:builder-fn result-set/as-unqualified-lower-maps})
+
+;; SQLを実行して、結果をすべて返す関数
+(defn execute! [sql-params]
+  (jdbc/execute! *datasource* sql-params options))
+
+;; SQLを実行して、結果の1件目だけを返す関数
+(defn execute-one! [sql-params]
+  (jdbc/execute-one! *datasource* sql-params options))
