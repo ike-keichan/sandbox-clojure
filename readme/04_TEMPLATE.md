@@ -79,6 +79,7 @@ $ make up
 | 4 | `src/api/task/core.clj` | パスと、呼ぶハンドラ |
 | 5 | `src/api/core.clj` | 4 で作ったルーティングを、`app-routes` に足す |
 | 6 | `test/api/task/core_test.clj` | テスト |
+| 7 | `scripts/smoke.sh` | 起動した API を呼んで確かめる行 |
 
 書き終えたら、テーブルを作って、確かめます。
 
@@ -105,6 +106,7 @@ $ make clj/test
 | `hello` の登録 | `src/api/core.clj` の、`hello-routes` を読み込む行と、`app-routes` の中の行 |
 | `hello` のテスト | `test/api/hello/` |
 | コンテナの起動の確認 | `docker-compose.yml` の `api` の `healthcheck` は、ポートを見ているだけなので、そのままで動きます |
-| 自動テストの中の呼び出し | `.github/workflows/test.yml` の `curl ... /api/hello` の行（自分の API のパスに変える） |
+| `hello` を使っているテスト | `test/api/core_test.clj` の `test-malformed-json` と `test-unhandled-exception`（自分の API を使う形に書き換える） |
+| 起動の確認の呼び出し | `scripts/smoke.sh` の `/hello` を呼ぶ行（自分の API のパスに変える） |
 
 `readme/` の文書も、自分のプロジェクトに合わせて書き換えてください。
