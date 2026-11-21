@@ -5,7 +5,12 @@
 ;; テーブルを作るSQLの一覧
 ;; テーブルを足したら、ここに追加する。
 ;; 例: ["tasks" "CREATE TABLE tasks (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(1024))"]
-(def tables [])
+(def tables
+  [["tasks" (str "CREATE TABLE tasks ("
+                 "id INT AUTO_INCREMENT PRIMARY KEY, "
+                 "title VARCHAR(1024), "
+                 "due_date DATE, "
+                 "is_done BOOLEAN NOT NULL DEFAULT FALSE)")]])
 
 ;; DBをリセットする関数
 ;; 現在のDBの全テーブルを削除し、再度作成する。

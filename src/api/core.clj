@@ -1,5 +1,6 @@
 (ns api.core
   (:require [api.hello.core :refer [hello-routes]]
+            [api.task.core :refer [task-routes]]
             [clojure.tools.logging :as log]
             [compojure.core :refer [context defroutes]]
             [compojure.route :as route]
@@ -11,7 +12,8 @@
 ;; 機能を足したら、ここにルーティングを追加する。
 (defroutes app-routes
   (context "/api" []
-    hello-routes)
+    hello-routes
+    task-routes)
   (route/not-found {:body {:detail "Not Found"}}))
 
 ;; ミドルウェアの適用
