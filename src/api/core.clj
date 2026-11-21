@@ -11,7 +11,8 @@
 ;; 全体のルーティング
 (defroutes app-routes
   (context "/api" []
-    hello-routes)
+    hello-routes
+    task-routes)
   (route/not-found "Not Found"))
 
 ;; ミドルウェアの適用

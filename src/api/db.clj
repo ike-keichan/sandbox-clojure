@@ -7,13 +7,18 @@
               :subprotocol "mysql"
               :subname "//db:3306/demo" 
               :user "root"
-              :password ""})
+              :password ""
+              :useSSL false
+              :useUnicode true
+              :characterEncoding "utf8"
+              :useOldAliasMetadataBehavior true
+              })
 
 ;; DB接続する関数
 (defn init-db []
   (try
     (jdbc/execute! db-spec
-      ["CREATE TABLE IF NOT EXISTS tasks (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), dueDate DATE, isDone BOOLEAN)"])
+      ["CREATE TABLE IF NOT EXISTS tasks (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), `dueDate` DATE, `isDone` BOOLEAN)"])
     (log/info "Table 'tasks' initialized successfully.")
     (catch Exception e
       (log/error e "Error initializing the 'tasks' table."))))
