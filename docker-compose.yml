@@ -1,13 +1,18 @@
 services:
   api:
     build: .
+    # 止めるときの合図（SIGTERM）が、Java まで届くようにする。付けないと、止まるまで10秒ほど待たされる。
+    init: true
     volumes:
       - .:/app
       - m2_data:/root/.m2
     ports:
-      - 3000:3000
+      # 手元のパソコンからだけつなげるように、127.0.0.1 を付ける。
+      # 付けないと、同じネットワークのほかの機器からもつなげてしまう。
+      - 127.0.0.1:3000:3000
     environment:
       - APP_ENV=development
+      - TZ=Asia/Tokyo
       - DB_HOST=db
       - DB_NAME=demo
       - DB_USER=root
@@ -26,16 +31,20 @@ services:
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
       MYSQL_DATABASE: 'demo'
+      # api と同じにする。そろえないと、日時を扱うときに、時刻がずれる。
       TZ: 'Asia/Tokyo'
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - 33306:3306
+      - 127.0.0.1:33306:3306
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # -h 127.0.0.1 で、ネットワーク経由の接続を確かめる。
+      # localhost だと、初期化の途中の、まだ外からつなげない状態でも成功してしまう。
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
 volumes:
   mysql_data:
   m2_data:

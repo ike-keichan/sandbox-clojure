@@ -4,6 +4,7 @@
 
 ;; task APIのルーティング
 ;; :id は、数字だけを受け付ける。数字でなければ、ルーティングに一致せず、404になる。
+;; 完了の操作は、何度呼んでも結果が同じになるように、「切り替え」ではなく、PUTで完了、DELETEで未完了にしている。
 (defroutes task-routes
   (GET "/tasks" [is_done]
     (handler/get-tasks-handler is_done))
@@ -16,4 +17,6 @@
   (DELETE "/tasks/:id{[0-9]+}" [id]
     (handler/delete-task-handler (parse-long id)))
   (PUT "/tasks/:id{[0-9]+}/done" [id]
-    (handler/toggle-is-done-handler (parse-long id))))
+    (handler/change-is-done-handler (parse-long id) true))
+  (DELETE "/tasks/:id{[0-9]+}/done" [id]
+    (handler/change-is-done-handler (parse-long id) false)))

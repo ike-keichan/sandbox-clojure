@@ -10,7 +10,7 @@
         (update :due_date #(some-> % str)))))
 
 ;; タスク一覧の取得
-;; is-done が nil でなければ、完了状態で絞り込む。
+;; is-done が nil でなければ、完了状態で絞り込む。IDの小さい順に返す。
 (defn find-tasks [is-done]
   (mapv row->task
         (if (nil? is-done)
@@ -30,17 +30,23 @@
     (find-task (:generated_key result))))
 
 ;; タスクの更新
-;; 更新したタスクを返す。
+;; 更新したタスクを返す。対象のタスクが存在しない場合は nil を返す。
+;; 先に存在を調べてから更新するのではなく、更新の結果（対象になった行の数）で判断する。
+;; こうすると、調べたあとに、別のリクエストがタスクを削除した場合も、正しく扱える。
 (defn update-task! [id {:keys [title due-date]}]
-  (db/execute-one! ["UPDATE tasks SET title = ?, due_date = ? WHERE id = ?" title due-date id])
-  (find-task id))
+  (let [result (db/execute-one! ["UPDATE tasks SET title = ?, due_date = ? WHERE id = ?"
+                                 title due-date id])]
+    (when (pos? (db/update-count result))
+      (find-task id))))
 
 ;; タスクの完了状態の更新
-;; 更新したタスクを返す。
+;; 更新したタスクを返す。対象のタスクが存在しない場合は nil を返す。
 (defn update-is-done! [id is-done]
-  (db/execute-one! ["UPDATE tasks SET is_done = ? WHERE id = ?" is-done id])
-  (find-task id))
+  (let [result (db/execute-one! ["UPDATE tasks SET is_done = ? WHERE id = ?" is-done id])]
+    (when (pos? (db/update-count result))
+      (find-task id))))
 
 ;; タスクの削除
+;; 削除できたら true、対象のタスクが存在しない場合は false を返す。
 (defn delete-task! [id]
-  (db/execute-one! ["DELETE FROM tasks WHERE id = ?" id]))
+  (pos? (db/update-count (db/execute-one! ["DELETE FROM tasks WHERE id = ?" id]))))

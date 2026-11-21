@@ -1,6 +1,9 @@
 (ns api.task.core-test
   (:require [api.core :refer [app]]
-            [api.test-helper :refer [parse-body with-test-database]]
+            [api.db-test-helper :refer [with-test-database]]
+            [api.task.handler :refer [title-max-length]]
+            [api.test-helper :refer [parse-body]]
+            [clojure.string :as str]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [ring.mock.request :as mock]))
 
@@ -11,54 +14,128 @@
   (app (-> (mock/request method path)
            (mock/json-body body))))
 
-(deftest test-create-and-read
-  (testing "タスクを作って、一覧と1件の取得で読める"
+;; テスト用に、タスクを1件作って、レスポンスの中身を返す関数
+(defn- create-task [task]
+  (let [response (request-json :post "/api/tasks" (merge {:title "テストタスク"} task))]
+    (is (= 201 (:status response)))
+    (parse-body response)))
+
+(deftest test-create
+  (testing "タスクを作ると、作ったタスクを201で返す"
     (let [response (request-json :post "/api/tasks" {:title "テストタスク" :due_date "2024-09-01"})]
       (is (= 201 (:status response)))
       (is (= {:id 1 :title "テストタスク" :due_date "2024-09-01" :is_done false}
-             (parse-body response))))
-    (let [response (app (mock/request :get "/api/tasks"))]
-      (is (= 200 (:status response)))
-      (is (= [{:id 1 :title "テストタスク" :due_date "2024-09-01" :is_done false}]
-             (parse-body response))))
-    (let [response (app (mock/request :get "/api/tasks/1"))]
-      (is (= 200 (:status response)))
-      (is (= "テストタスク" (:title (parse-body response)))))))
+             (parse-body response)))))
 
-(deftest test-done-flag
-  (testing "完了と未完了を切り替えて、一覧を絞り込める"
-    (request-json :post "/api/tasks" {:title "テストタスク2"})
-    (let [response (app (mock/request :put "/api/tasks/1/done"))]
-      (is (= 200 (:status response)))
-      (is (true? (:is_done (parse-body response)))))
-    (is (= 1 (count (parse-body (app (mock/request :get "/api/tasks?is_done=true"))))))
-    (is (= 0 (count (parse-body (app (mock/request :get "/api/tasks?is_done=false"))))))
-    (let [response (app (mock/request :put "/api/tasks/1/done"))]
-      (is (false? (:is_done (parse-body response)))))))
+  (testing "期日は、なくてもよい"
+    (is (nil? (:due_date (create-task {})))))
 
-(deftest test-due-date
-  (testing "期日の形が正しくなければ、422を返す"
-    (doseq [[due-date expected] [["2024-12-01" 201]
-                                 ["2024-12-32" 422]
-                                 ["2024/12/01" 422]
-                                 ["2024-1201" 422]]]
-      (let [response (request-json :post "/api/tasks" {:title "テストタスク" :due_date due-date})]
-        (is (= expected (:status response)) due-date)))))
+  (testing "タスク名は、上限ちょうどの長さまで使える"
+    (let [title (str/join (repeat title-max-length "あ"))]
+      (is (= title (:title (create-task {:title title})))))))
 
-(deftest test-update-and-delete
-  (testing "タスクを更新して、削除できる"
-    (request-json :post "/api/tasks" {:title "テストタスク3"})
-    (let [response (request-json :put "/api/tasks/1" {:title "更新したタスク" :due_date "2024-12-01"})]
+(deftest test-create-with-invalid-input
+  (testing "値が正しくなければ、422を返し、タスクを作らない"
+    (doseq [body [{}
+                  {:title ""}
+                  {:title "   "}
+                  {:title nil}
+                  {:title 123}
+                  {:title (str/join (repeat (inc title-max-length) "あ"))}
+                  {:title "テストタスク" :due_date "2024-12-32"}
+                  {:title "テストタスク" :due_date "2024/12/01"}
+                  {:title "テストタスク" :due_date "2024-1201"}
+                  {:title "テストタスク" :due_date "+12345-01-01"}
+                  {:title "テストタスク" :due_date 20241201}
+                  [1 2]
+                  "テストタスク"]]
+      (let [response (request-json :post "/api/tasks" body)]
+        (is (= 422 (:status response)) (pr-str body))
+        (is (= {:detail "Invalid task"} (parse-body response)) (pr-str body))))
+    (is (= [] (parse-body (app (mock/request :get "/api/tasks"))))))
+
+  (testing "本文がない、またはJSONでなければ、422を返す"
+    (is (= 422 (:status (app (mock/request :post "/api/tasks")))))
+    (is (= 422 (:status (app (-> (mock/request :post "/api/tasks")
+                                 (mock/body "title=テストタスク"))))))))
+
+(deftest test-get
+  (testing "タスクを1件取得できる"
+    (let [task (create-task {})
+          response (app (mock/request :get (str "/api/tasks/" (:id task))))]
       (is (= 200 (:status response)))
-      (is (= {:id 1 :title "更新したタスク" :due_date "2024-12-01" :is_done false}
-             (parse-body response))))
-    (is (= 204 (:status (app (mock/request :delete "/api/tasks/1")))))
-    (is (= 404 (:status (app (mock/request :get "/api/tasks/1")))))))
+      (is (= task (parse-body response))))))
+
+(deftest test-list
+  (testing "一覧を、IDの小さい順に取得できる"
+    (let [first-task (create-task {:title "1つ目"})
+          second-task (create-task {:title "2つ目"})
+          response (app (mock/request :get "/api/tasks"))]
+      (is (= 200 (:status response)))
+      (is (= [first-task second-task] (parse-body response)))))
+
+  (testing "完了状態で絞り込める"
+    (let [done-task (parse-body (app (mock/request :put "/api/tasks/1/done")))]
+      (is (= [done-task] (parse-body (app (mock/request :get "/api/tasks?is_done=true")))))
+      (is (= ["2つ目"] (map :title (parse-body (app (mock/request :get "/api/tasks?is_done=false"))))))))
+
+  (testing "is_done が true と false 以外なら、422を返す"
+    (doseq [query ["is_done=abc" "is_done=1" "is_done=" "is_done=true&is_done=false"]]
+      (let [response (app (mock/request :get (str "/api/tasks?" query)))]
+        (is (= 422 (:status response)) query)
+        (is (= {:detail "Invalid is_done"} (parse-body response)) query)))))
+
+(deftest test-update
+  (testing "タスクを更新できる。渡さなかった期日は、空になる"
+    (let [task (create-task {:due_date "2024-09-01"})
+          response (request-json :put (str "/api/tasks/" (:id task)) {:title "更新したタスク"})]
+      (is (= 200 (:status response)))
+      (is (= (assoc task :title "更新したタスク" :due_date nil) (parse-body response)))))
+
+  (testing "値が正しくなければ、422を返し、タスクを変えない"
+    (let [before (parse-body (app (mock/request :get "/api/tasks/1")))]
+      (is (= 422 (:status (request-json :put "/api/tasks/1" {:title ""}))))
+      (is (= 422 (:status (app (mock/request :put "/api/tasks/1")))))
+      (is (= before (parse-body (app (mock/request :get "/api/tasks/1"))))))))
+
+(deftest test-delete
+  (testing "タスクを削除すると、本文なしの204を返す"
+    (let [task (create-task {})
+          response (app (mock/request :delete (str "/api/tasks/" (:id task))))]
+      (is (= 204 (:status response)))
+      (is (nil? (:body response)))
+      (is (= 404 (:status (app (mock/request :get (str "/api/tasks/" (:id task))))))))))
+
+(deftest test-done
+  (testing "完了にして、未完了に戻せる。同じ操作を2回呼んでも、結果は変わらない"
+    (let [task (create-task {})
+          path (str "/api/tasks/" (:id task) "/done")]
+      (let [response (app (mock/request :put path))]
+        (is (= 200 (:status response)))
+        (is (= (assoc task :is_done true) (parse-body response))))
+      (is (true? (:is_done (parse-body (app (mock/request :put path))))))
+      (let [response (app (mock/request :delete path))]
+        (is (= 200 (:status response)))
+        (is (= task (parse-body response))))
+      (is (false? (:is_done (parse-body (app (mock/request :delete path)))))))))
 
 (deftest test-not-found
   (testing "存在しないタスクは、404を返す"
-    (is (= 404 (:status (app (mock/request :get "/api/tasks/999")))))
-    (is (= 404 (:status (request-json :put "/api/tasks/999" {:title "x"}))))
-    (is (= 404 (:status (app (mock/request :delete "/api/tasks/999")))))
-    (is (= 404 (:status (app (mock/request :put "/api/tasks/999/done")))))
-    (is (= {:detail "Task not found"} (parse-body (app (mock/request :get "/api/tasks/999")))))))
+    (doseq [request [(mock/request :get "/api/tasks/999")
+                     (-> (mock/request :put "/api/tasks/999") (mock/json-body {:title "テストタスク"}))
+                     (mock/request :delete "/api/tasks/999")
+                     (mock/request :put "/api/tasks/999/done")
+                     (mock/request :delete "/api/tasks/999/done")
+                     ;; IDが大きすぎて数値にできない場合
+                     (mock/request :get "/api/tasks/99999999999999999999999")]]
+      (let [response (app request)]
+        (is (= 404 (:status response)) (:uri request))
+        (is (= {:detail "Task not found"} (parse-body response)) (:uri request)))))
+
+  (testing "IDが数字でなければ、ルーティングに一致せず、404を返す"
+    (let [response (app (mock/request :get "/api/tasks/abc"))]
+      (is (= 404 (:status response)))
+      (is (= {:detail "Not Found"} (parse-body response)))))
+
+  (testing "値が正しくないときは、タスクが存在しなくても、422を先に返す"
+    (is (= 422 (:status (request-json :put "/api/tasks/999" {:title ""}))))))
