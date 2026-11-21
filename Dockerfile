@@ -1,4 +1,4 @@
-FROM clojure:temurin-25-lein
+FROM clojure:temurin-26-lein
 
 WORKDIR /app
 
