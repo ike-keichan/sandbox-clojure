@@ -1,6 +1,6 @@
 # sandbox-clojure
 
-Clojure（Ring、Compojure）による Web API の技術検証と、プロジェクトのひな形を兼ねたリポジトリ。
+Clojure（Ring、Compojure、MySQL）の技術検証と、プロジェクトのひな形を兼ねたリポジトリ。
 
 ## 概要
 
