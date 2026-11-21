@@ -26,5 +26,9 @@
   (jdbc/execute! *datasource* sql-params options))
 
 ;; SQLを実行して、結果の1件目だけを返す関数
-(defn execute-one! [sql-params]
-  (jdbc/execute-one! *datasource* sql-params options))
+;; INSERTで振られたIDを受け取るときは、追加のオプションに {:return-keys true} を渡す。
+(defn execute-one!
+  ([sql-params]
+   (execute-one! sql-params {}))
+  ([sql-params extra-options]
+   (jdbc/execute-one! *datasource* sql-params (merge options extra-options))))
