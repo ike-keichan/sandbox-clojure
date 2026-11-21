@@ -16,3 +16,12 @@ pom.xml.asc
 .DS_Store
 .clj-kondo/.cache/
 .lsp/
+
+# 環境変数
+.env
+.env.*
+
+# エディタ
+.idea/
+*.iml
+.calva/

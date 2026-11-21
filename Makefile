@@ -4,6 +4,7 @@
 # セットアップ
 setup:
 	docker compose build
+	docker compose run --rm --no-deps api lein deps
 	docker compose up -d --force-recreate --wait
 	docker compose exec api lein run -m api.migrate
 	docker compose stop
@@ -48,20 +49,21 @@ clj/check-format:
 # コード修正（フォーマッタ）
 clj/fix:
 	docker compose exec api lein cljfmt fix
-# ライブラリのインストール
+# ライブラリのインストール（project.clj に書いたものを、ダウンロードする）
 clj/install:
-	docker compose exec api lein deps
+	docker compose run --rm --no-deps api lein deps
 # 新しいバージョンがあるライブラリの確認
 clj/outdated:
 	docker compose exec api lein ancient :all
 
 
 ## DB操作系
-# DBのマイグレーション（全テーブルを削除して、作り直す）
+# DBのマイグレーション（まだないテーブルを作る。データは残る）
 db/migrate:
 	docker compose exec api lein run -m api.migrate
-# DBのリセット（マイグレーションと同じ）
-db/reset: db/migrate
+# DBのリセット（全テーブルを削除して、作り直す。データは消える）
+db/reset:
+	docker compose exec api lein run -m api.migrate reset
 # dbコンテナのシェル
 db/login:
 	docker compose exec db bash

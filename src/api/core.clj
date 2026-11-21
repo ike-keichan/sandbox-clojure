@@ -1,5 +1,6 @@
 (ns api.core
   (:require [api.hello.core :refer [hello-routes]]
+            [api.response :refer [error-response]]
             [clojure.tools.logging :as log]
             [compojure.core :refer [context defroutes]]
             [compojure.route :as route]
@@ -12,14 +13,30 @@
 (defroutes app-routes
   (context "/api" []
     hello-routes)
-  (route/not-found {:body {:detail "Not Found"}}))
+  (route/not-found (error-response 404 "Not Found")))
+
+;; 想定していない例外を受け止めるミドルウェア
+;; 例外をそのままにすると、サーバーが、内部の情報を含んだ HTML のエラー画面を返してしまう。
+;; 内容は記録に出して、利用者には、決まった形の500だけを返す。
+(defn- wrap-exception [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Exception e
+        (log/error e "Unhandled exception")
+        (error-response 500 "Internal Server Error")))))
 
 ;; ミドルウェアの適用
-;; リクエストの JSON をキーワードのマップに変え、レスポンスのマップを JSON に変える。
+;; 下に書いたものほど外側になり、リクエストを先に受け取る。
+;; wrap-json-response を一番外側にして、エラーのレスポンスも JSON になるようにしている。
 (def app
   (-> app-routes
-      (wrap-json-body {:keywords? true})
+      ;; リクエストの JSON を、キーワードのマップに変える。JSON として読めなければ、400 を返す。
+      (wrap-json-body {:keywords? true
+                       :malformed-response (error-response 400 "Malformed JSON")})
       wrap-params
+      wrap-exception
+      ;; レスポンスのマップを、JSON に変える。
       wrap-json-response))
 
 ;; 開発中かどうか
