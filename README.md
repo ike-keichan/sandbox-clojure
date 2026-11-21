@@ -32,11 +32,11 @@ Clojure で Web API を作るときの土台を、すぐ動く状態でまとめ
 | 役割 | 使っているもの | バージョン |
 | --- | --- | --- |
 | 言語 | Clojure | 1.12 |
-| 実行環境 | Java（Eclipse Temurin） | 25（長期サポート版） |
+| 実行環境 | Java（Eclipse Temurin） | 25（LTS） |
 | ビルドの道具 | Leiningen | 2.13 |
 | HTTP の処理 | Ring（サーバーは Jetty） | 1.15 |
 | ルーティング | Compojure | 1.7 |
-| データベース | MySQL | 8.4（長期サポート版） |
+| データベース | MySQL | 8.4（LTS） |
 | データベースの操作 | next.jdbc | 1.4 |
 | コードの検査 | clj-kondo | 2026.10 |
 | コードの整形 | cljfmt | 0.16 |
