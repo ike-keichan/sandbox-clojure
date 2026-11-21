@@ -69,7 +69,8 @@ Java、Clojure、MySQL は、Docker のコンテナの中で動きます。手�
 | `make clj/test` | テストを実行します |
 | `make clj/check` | コードを検査します |
 | `make clj/fix` | 書式を、自動で直します |
-| `make db/migrate` | テーブルを作り直します（データは消えます） |
+| `make db/migrate` | まだないテーブルを作ります（データは残ります） |
+| `make db/reset` | 全テーブルを削除して、作り直します（データは消えます） |
 
 ---
 

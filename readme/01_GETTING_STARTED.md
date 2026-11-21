@@ -112,14 +112,15 @@ $ cd sandbox-clojure
 $ make setup
 ```
 
-このコマンドは、次の4つを順番に行います。
+このコマンドは、次の5つを順番に行います。
 
 | 順番 | 行うこと | 補足 |
 | --- | --- | --- |
-| 1 | コンテナのビルド | Clojure のイメージをダウンロードして、API 用のコンテナを作ります。ライブラリも、このときにダウンロードします |
-| 2 | コンテナの起動 | MySQL のイメージをダウンロードして起動し、続けて API を起動します |
-| 3 | データベースの準備 | データベースにつながることを確かめ、テーブルを作ります（`main` ブランチには、まだテーブルがありません） |
-| 4 | コンテナの停止 | 作り終えたら、いったん止めます |
+| 1 | コンテナのビルド | Clojure のイメージをダウンロードして、API 用のコンテナを作ります |
+| 2 | ライブラリのダウンロード | `project.clj` に書いたライブラリを、Docker のボリュームに入れます |
+| 3 | コンテナの起動 | MySQL のイメージをダウンロードして起動し、続けて API を起動します |
+| 4 | データベースの準備 | データベースにつながることを確かめ、テーブルを作ります（`main` ブランチには、まだテーブルがありません） |
+| 5 | コンテナの停止 | 作り終えたら、いったん止めます |
 
 初回は、イメージとライブラリのダウンロードがあるので、数分かかります。途中で止まっているように見えても、そのまま待ってください。
 
@@ -128,7 +129,7 @@ $ make setup
 ```zsh
 docker compose exec api lein run -m api.migrate
 [main] INFO api.migrate - Connected to the database demo
-[main] INFO api.migrate - Finished the migration
+[main] INFO api.migrate - Created the tables
 docker compose stop
  Container sandbox-clojure-api-1 Stopping
  Container sandbox-clojure-api-1 Stopped
@@ -187,8 +188,8 @@ API の起動が終わるまで待ってから、コマンドを入力できる�
 ```zsh
 $ make ps
 NAME                    IMAGE                 SERVICE   STATUS                    PORTS
-sandbox-clojure-api-1   sandbox-clojure-api   api       Up 5 seconds (healthy)    0.0.0.0:3000->3000/tcp
-sandbox-clojure-db-1    mysql:8.4             db        Up 11 seconds (healthy)   0.0.0.0:33306->3306/tcp
+sandbox-clojure-api-1   sandbox-clojure-api   api       Up 10 seconds (healthy)   127.0.0.1:3000->3000/tcp
+sandbox-clojure-db-1    mysql:8.4             db        Up 16 seconds (healthy)   127.0.0.1:33306->3306/tcp
 ```
 
 `api` と `db` の2行があり、どちらの `STATUS` も `Up` で始まり、`(healthy)` と出ていれば、正常です（表示は、見やすいように一部を省いています）。
@@ -217,9 +218,13 @@ $ curl http://localhost:3000/api/unknown
 
 ```zsh
 $ make clj/test
+lein test api.core-test
+[main] ERROR api.core - Unhandled exception
+clojure.lang.ExceptionInfo: secret {}
+
 lein test api.hello.core-test
 
-Ran 2 tests containing 4 assertions.
+Ran 4 tests containing 9 assertions.
 0 failures, 0 errors.
 
 $ make clj/check
@@ -230,6 +235,8 @@ All source files formatted correctly
 ```
 
 `0 failures, 0 errors.`、`errors: 0, warnings: 0`、`All source files formatted correctly` が出れば、正常です。
+
+テストの途中に出る `ERROR api.core - Unhandled exception` は、失敗ではありません。「想定していない例外が起きたときに、500 を返す」ことを確かめるテストが、わざと例外を起こしているためです。
 
 以上で、環境構築は完了です。
 
@@ -259,11 +266,12 @@ $ make stop
 3. 作業する。`src/` の中のファイルを保存すると、次に API を呼んだときに、変更が読み込まれます。コンテナを起動し直す必要はありません。
 4. `Ctrl + C`（または `make stop`）で、コンテナを止める。
 
-`project.clj` や `Dockerfile` が変わったとき（`git pull` で更新を取り込んだあとなど）は、コンテナをビルドし直します。
+`git pull` で更新を取り込んだあとは、変わったファイルに合わせて、次を実行します。
 
-```zsh
-$ make build
-```
+| 変わったファイル | 実行するコマンド |
+| --- | --- |
+| `project.clj` | `make clj/install` のあとに `make restart` |
+| `Dockerfile` | `make build` のあとに `make upd` |
 
 そのほかのコマンドは、[Command](./02_COMMAND.md) にまとめています。
 
@@ -297,7 +305,7 @@ Docker Desktop が起動していません。Docker Desktop を起動して、�
 
 ### `make setup` の途中で止まった
 
-ダウンロードの途中で、通信が切れた可能性があります。もう一度 `make setup` を実行してください。途中まで終わった分は、やり直されません。
+ダウンロードの途中で、通信が切れた可能性があります。もう一度 `make setup` を実行してください。やり直しても、データベースのデータは消えません。
 
 ### `make setup` や `make upd` が、`api` の起動を待ったまま終わらない
 
@@ -317,11 +325,11 @@ $ docker compose logs api
 
 ### ライブラリを足したのに、`FileNotFoundException`（見つからない）と出る
 
-`project.clj` にライブラリを足したあとは、ビルドし直す必要があります。
+`project.clj` にライブラリを足したあとは、ライブラリをダウンロードして、API を再起動する必要があります。
 
 ```zsh
-$ make build
-$ make upd
+$ make clj/install
+$ make restart
 ```
 
 ### データベースにつながらないエラーが出る
