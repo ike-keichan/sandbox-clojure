@@ -8,6 +8,9 @@ updates:
       day: monday
       time: "09:00"
       timezone: Asia/Tokyo
+    ignore:
+      # Java は長期サポート版を使う。イメージの更新は、手で行う。
+      - dependency-name: clojure
   # MySQL のイメージ（docker-compose.yml）
   - package-ecosystem: docker-compose
     directory: /
