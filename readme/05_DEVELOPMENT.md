@@ -121,13 +121,19 @@ $ git switch main
 
 ### 4-1. Dependabot からプルリクエストが届いた
 
-毎週月曜の朝に、依存の更新がプルリクエストで届きます。対象は、次の3つです。Clojure のライブラリ（`project.clj`）は、Dependabot が対応していないので、届きません。「4-2」の手順で、手で更新します。
+毎週月曜の朝に、依存の更新がプルリクエストで届きます。対象は、次の2つです。
 
 | 対象 | 記録されている場所 |
 | --- | --- |
-| Clojure のイメージ | `Dockerfile` |
 | MySQL のイメージ | `docker-compose.yml` |
 | GitHub Actions のアクション | `.github/workflows/` |
+
+次の2つは、Dependabot の対象ではありません。手で更新します。
+
+| 対象 | 理由 | 更新の方法 |
+| --- | --- | --- |
+| Clojure のライブラリ（`project.clj`） | Dependabot が対応していません | 「4-2」の手順 |
+| Clojure のイメージ（`Dockerfile`） | Java は長期サポート版を使うので、自動では上げません | 新しい長期サポート版が出たら、`Dockerfile` のイメージを書き換えます |
 
 1. 自動テストが緑なら、そのままマージします。
 2. 赤の場合は、新しい版で書き方が変わっていることが多いです。プルリクエストを閉じて、`feature/` のブランチで、更新と修正をまとめて行います（「4-2」を参照）。
@@ -149,13 +155,14 @@ $ make clj/outdated
 all artifacts are up-to-date.
 ```
 
-新しいバージョンがある場合は、ライブラリの名前と、いまのバージョン、新しいバージョンが表示されます。`project.clj` のバージョンを書き換えて、ビルドし直し、確かめます。
+新しいバージョンがある場合は、ライブラリの名前と、いまのバージョン、新しいバージョンが表示されます。`project.clj` のバージョンを書き換えて、ライブラリをダウンロードし、確かめます。
 
 ```zsh
-$ make build
-$ make upd
+$ make clj/install
+$ make restart
 $ make clj/check
 $ make clj/test
+$ bash scripts/smoke.sh
 ```
 
 そのあとは、「3-3」からの流れで進めます。
@@ -220,8 +227,7 @@ $ make clj/test
 | 2 | コンテナを起動する | `make upd` |
 | 3 | コードを検査する | `make clj/check` |
 | 4 | テストを実行する | `make clj/test` |
-| 5 | MySQL にテーブルを作る | `make db/migrate` |
-| 6 | 起動した API を呼ぶ | `curl http://localhost:3000/api/hello` |
+| 5 | 起動した API を、実際に呼ぶ | `bash scripts/smoke.sh` |
 
 動くのは、次のときです。
 
@@ -236,7 +242,7 @@ $ make clj/test
 
 | 対象 | 方針 | 上げるときに直す場所 |
 | --- | --- | --- |
-| Java | 長期サポート版（LTS）を使います。半年ごとに出る、長期サポートでない版には上げません | `Dockerfile` のイメージ（`clojure:temurin-<バージョン>-lein`） |
+| Java | 長期サポート版（LTS）を使います。半年ごとに出る、長期サポートでない版には上げません。Dependabot の対象ではないので、手で上げます | `Dockerfile` のイメージ（`clojure:temurin-<バージョン>-lein`） |
 | Leiningen | イメージに入っている版を使います | `Dockerfile` のイメージを上げると、一緒に上がります |
 | Clojure | 最新の安定版を使います。alpha や beta の付く版は使いません | `project.clj` |
 | Clojure のライブラリ | 最新の安定版を使います。`make clj/outdated` で確認します | `project.clj` |
