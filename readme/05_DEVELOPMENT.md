@@ -133,7 +133,7 @@ $ git switch main
 | 対象 | 理由 | 更新の方法 |
 | --- | --- | --- |
 | Clojure のライブラリ（`project.clj`） | Dependabot が対応していません | 「4-2」の手順 |
-| Clojure のイメージ（`Dockerfile`） | Java は長期サポート版を使うので、自動では上げません | 新しい長期サポート版が出たら、`Dockerfile` のイメージを書き換えます |
+| Clojure のイメージ（`Dockerfile`） | Java は LTS を使うので、自動では上げません | 新しい LTS が出たら、`Dockerfile` のイメージを書き換えます |
 
 1. 自動テストが緑なら、そのままマージします。
 2. 赤の場合は、新しい版で書き方が変わっていることが多いです。プルリクエストを閉じて、`feature/` のブランチで、更新と修正をまとめて行います（「4-2」を参照）。
@@ -242,10 +242,10 @@ $ bash scripts/smoke.sh
 
 | 対象 | 方針 | 上げるときに直す場所 |
 | --- | --- | --- |
-| Java | 長期サポート版（LTS）を使います。半年ごとに出る、長期サポートでない版には上げません。Dependabot の対象ではないので、手で上げます | `Dockerfile` のイメージ（`clojure:temurin-<バージョン>-lein`） |
+| Java | LTS を使います。半年ごとに出る、LTS でない版には上げません。Dependabot の対象ではないので、手で上げます | `Dockerfile` のイメージ（`clojure:temurin-<バージョン>-lein`） |
 | Leiningen | イメージに入っている版を使います | `Dockerfile` のイメージを上げると、一緒に上がります |
 | Clojure | 最新の安定版を使います。alpha や beta の付く版は使いません | `project.clj` |
 | Clojure のライブラリ | 最新の安定版を使います。`make clj/outdated` で確認します | `project.clj` |
-| MySQL | 長期サポート版（LTS）を使います。短い周期で出る版（Innovation）には上げません。Dependabot は、メジャーバージョンの更新を知らせない設定にしています | `docker-compose.yml` のイメージ |
+| MySQL | LTS を使います。短い周期で出る版（Innovation）には上げません。Dependabot は、メジャーバージョンの更新を知らせない設定にしています | `docker-compose.yml` のイメージ |
 
 バージョンを上げたら、[README](../README.md) の「Tool Versions」の表も直します。

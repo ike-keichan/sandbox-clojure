@@ -162,7 +162,7 @@ make clj/test
 
 ### バージョン
 
-- Java と MySQL は、長期サポート版を使う。
+- Java と MySQL は、LTS を使う。
 - バージョンを変えたら、`README.md` の「Tool Versions」の表も直す。
 
 ### Makefile
