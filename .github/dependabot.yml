@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # Clojure のイメージ（Dockerfile）
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+  # MySQL のイメージ（docker-compose.yml）
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    ignore:
+      # MySQL は長期サポート版を使う。メジャーバージョンの更新は、手で行う。
+      - dependency-name: mysql
+        update-types: ["version-update:semver-major"]
+  # GitHub Actions のアクション
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    groups:
+      actions:
+        patterns: ["*"]
+
+# Clojure のライブラリ（project.clj）は、Dependabot が対応していない。
+# make clj/outdated で確認して、手で更新する。

@@ -2,93 +2,84 @@
 
 Clojure（Ring、Compojure、MySQL）の技術検証と、プロジェクトのひな形を兼ねたリポジトリ。
 
-## 概要
+Clojure で Web API を作るときの土台を、すぐ動く状態でまとめています。新しいプロジェクトを始めるときのひな形として使うほか、ライブラリの新しい版や、別の構成を試す場所としても使います。
 
-| 項目 | 内容 |
-| --- | --- |
-| 題材 | Clojure による Web API の実装 |
-| 時期 | 2024年9月 |
-| 言語 | Clojure |
+## Description
 
-Clojure で、タスクを管理する Web API を作り、構成を検証したものである。HTTP の処理に Ring、ルーティングに Compojure、データベースに MySQL を使い、Docker Compose で動かす。[sandbox-fastapi](https://github.com/ike-keichan/sandbox-fastapi) で作った API と同じ題材を、Clojure で書いている。
+- [Branch](#branch)
+- [Tool Versions](#tool-versions)
+- [Getting Started](#getting-started)
+- [Command](#command)
+- [Documents](#documents)
 
-用意している API は、次のとおりである。
+---
 
-| メソッドとパス | 内容 |
-| --- | --- |
-| `GET /api/hello` | `hello world!` というメッセージを返す |
-| `GET /api/tasks` | タスクの一覧を返す。`isDone` を付けると、完了か未完了かで絞り込む |
-| `POST /api/tasks` | タスクを作る。`title` を渡す |
-| `GET /api/tasks/:id` | タスクを1件返す |
-| `PUT /api/tasks/:id/done` | タスクの完了と未完了を切り替える |
+## Branch
 
-## ディレクトリ構成
+目的の違う内容を、ブランチで分けています。
 
-| ディレクトリ・ファイル | 内容 |
-| --- | --- |
-| `src/api/core.clj` | 入口。全体のルーティングと、サーバーの起動 |
-| `src/api/db.clj` | データベースへの接続の設定と、`tasks` テーブルの作成 |
-| `src/api/hello/` | hello API のルーティング（`core.clj`）と処理（`handler.clj`） |
-| `src/api/tasks/` | tasks API のルーティング（`core.clj`）と処理（`handler.clj`） |
-| `src/utils/` | 応答の JSON のキーを、キャメルケースに変える関数 |
-| `test/` | hello API と tasks API のテストと、テスト用のリクエストを作る関数 |
-| `project.clj` | Leiningen の設定。依存するライブラリと、そのバージョンの記録 |
-| `Dockerfile`、`docker-compose.yml` | Clojure のコンテナと、MySQL のコンテナの定義 |
-| `Makefile` | よく使うコマンドをまとめたもの |
+| ブランチ | 内容 | 使いみち |
+| --- | --- | --- |
+| [`main`](https://github.com/ike-keichan/sandbox-clojure) | 最小の形。API は、動作の確認用の `GET /api/hello` だけ | 新しいプロジェクトの出発点にします |
+| [`example/task-api`](https://github.com/ike-keichan/sandbox-clojure/tree/example/task-api) | `main` に、タスクを管理する API を足した見本 | 機能の足し方の手本にします |
 
-## 実行環境
+`README.md` と、`readme/` の番号つきの文書は、どのブランチでも同じ内容です。`example/` で始まるブランチには、そのブランチの説明（`readme/EXAMPLE_*.md`）が入っています。
 
-当時使っていた環境のうち、実行に必要なソフトウェアを挙げる。バージョンは、リポジトリに記録が残っている値である。
+---
 
-| ソフトウェア | バージョン | 用途 | 補足 |
-| --- | --- | --- | --- |
-| macOS | 14 Sonoma | OS | |
-| Docker Desktop | 不明 | コンテナの実行 | バージョンの記録がない |
-| OpenJDK | 17 | Clojure の実行 | `Dockerfile` に記録。コンテナの中で使う |
-| Leiningen | 不明 | ビルドと実行 | `Dockerfile` のイメージ（`clojure:openjdk-17-lein`）に付属するもの |
-| Clojure | 1.10.3 | 言語 | `project.clj` に記録 |
-| Ring | 1.9.2 | HTTP の処理 | `project.clj` に記録 |
-| Compojure | 1.6.2 | ルーティング | `project.clj` に記録 |
-| MySQL | 8.0 | データベース | `docker-compose.yml` に記録 |
+## Tool Versions
 
-Java、Leiningen、Clojure、MySQL は、コンテナの中で動く。手元にインストールする必要はない。
+| 役割 | 使っているもの | バージョン |
+| --- | --- | --- |
+| 言語 | Clojure | 1.12 |
+| 実行環境 | Java（Eclipse Temurin） | 25（長期サポート版） |
+| ビルドの道具 | Leiningen | 2.13 |
+| HTTP の処理 | Ring（サーバーは Jetty） | 1.15 |
+| ルーティング | Compojure | 1.7 |
+| データベース | MySQL | 8.4（長期サポート版） |
+| データベースの操作 | next.jdbc | 1.4 |
+| コードの検査 | clj-kondo | 2026.10 |
+| コードの整形 | cljfmt | 0.16 |
+| テスト | clojure.test、ring-mock | |
 
-## セットアップ
+Java、Clojure、MySQL は、Docker のコンテナの中で動きます。手元に必要なのは、Docker Desktop、make、Git だけです。
 
-次の手順で、実行に必要なソフトウェアを用意する。当時より新しいバージョンでの動作は確認していないので、動かない場合は「実行環境」の表に近いバージョンを使う。
+正確なバージョンは、[project.clj](./project.clj)、[Dockerfile](./Dockerfile)、[docker-compose.yml](./docker-compose.yml) に記録しています。
 
-1. [Docker Desktop](https://www.docker.com/products/docker-desktop/) をインストールして、起動する。
-2. コンテナをビルドする。
+---
 
-   ```sh
-   make build
-   ```
+## Getting Started
 
-## 実行方法
+環境構築の手順は、[こちら](./readme/01_GETTING_STARTED.md)。
 
-コンテナを起動する。
+手順を終えると、<http://localhost:3000/api/hello> で API を呼べるようになります。
 
-```sh
-make up
-```
+---
 
-`http://localhost:3000/api/hello` を開くと、メッセージが返る。終了するには、ターミナルで Ctrl + C を押す。
+## Command
 
-主なコマンドは、次のとおりである。すべて `Makefile` に書いてある。
+主要なコマンドは、以下のとおりです。それ以外のコマンドの詳細は、[こちら](./readme/02_COMMAND.md)。
 
 | コマンド | 内容 |
 | --- | --- |
-| `make up` | コンテナを起動する |
-| `make upd` | コンテナを、バックグラウンドで起動する |
-| `make stop` | コンテナを止める |
-| `make down` | コンテナを削除する |
-| `make downv` | コンテナを、データベースの中身ごと削除する |
-| `make test` | テストを実行する（コンテナの起動中に使う） |
-| `make clojure/repl` | Clojure の REPL を開く |
-| `make db/repl` | MySQL に接続する |
+| `make setup` | 環境を作ります（初回だけ） |
+| `make up` | コンテナを起動します |
+| `make upd` | コンテナを、バックグラウンドで起動します |
+| `make stop` | コンテナを止めます |
+| `make clj/test` | テストを実行します |
+| `make clj/check` | コードを検査します |
+| `make clj/fix` | 書式を、自動で直します |
+| `make db/migrate` | テーブルを作り直します（データは消えます） |
 
-## 備考
+---
 
-- tasks API は作りかけである。タスクの更新と削除は、ルーティングをコメントにしてあり、処理も書いていない。テストには、その2つを対象にしたものも含まれている。
-- `src/api/tasks/handler.clj` などに、確認用の表示（`println`）が残っている。
-- データベースは、パスワードなしの root で接続する設定である。手元で試すためのもので、公開する環境では使えない。
+## Documents
+
+| 文書 | 内容 |
+| --- | --- |
+| [Getting Started](./readme/01_GETTING_STARTED.md) | 環境構築の手順。必要なソフトウェアの用意から、動作の確認、うまくいかないときの対処まで |
+| [Command](./readme/02_COMMAND.md) | すべてのコマンドの説明 |
+| [Architecture](./readme/03_ARCHITECTURE.md) | コンテナの構成、リクエストの流れ、プログラムの層、ディレクトリ構成、テストの仕組み、設定 |
+| [Template](./readme/04_TEMPLATE.md) | ひな形として使う手順。自分のリポジトリの作り方、名前の変え方、機能の足し方 |
+| [Development](./readme/05_DEVELOPMENT.md) | このリポジトリ自体を更新するときの決まり。ブランチ、作業の流れ、依存の更新、見本のブランチの保ち方 |
+| [CLAUDE.md](./CLAUDE.md) | コードと文書の書き方の細かい決まり。Claude Code に作業を頼むときにも読み込まれます |
