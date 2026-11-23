@@ -1,4 +1,4 @@
-.PHONY: setup up upd stop restart build down downv ps clj/test clj/check clj/check-lint clj/check-format clj/fix clj/install clj/outdated db/migrate db/reset db/login db/repl clojure/login clojure/repl
+.PHONY: setup up upd stop restart build down downv ps clj/test clj/check clj/check-lint clj/check-format clj/fix clj/install clj/outdated db/migrate db/reset db/login db/repl clojure/login clojure/repl table/format
 
 # コンテナを、手元のパソコンと同じユーザーで動かすために、ユーザーの番号を渡す（docker-compose.yml の user を参照）。
 export HOST_UID := $(shell id -u)
@@ -83,3 +83,10 @@ clojure/login:
 # apiコンテナのclojureのrepl
 clojure/repl:
 	docker compose exec api lein repl
+
+
+## このブランチ（example/table-formatter）で足したコマンド
+# 表を整形するプログラムの実行（FILE に、整形したい表のファイルを指定する。指定しなければ、見本を使う）
+FILE ?= samples/table.md
+table/format:
+	docker compose run --rm --no-deps -T api lein run -m table-formatter.core < $(FILE)

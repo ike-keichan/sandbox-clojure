@@ -31,6 +31,10 @@ jobs:
         run: make clj/test
       - name: Call the API on the running server
         run: bash scripts/smoke.sh
+      - name: Run the table formatter and compare the output with the expected one
+        run: |
+          make --silent table/format > /tmp/actual.md
+          diff /tmp/actual.md samples/table.expected.md
       - name: Show the logs when something failed
         if: failure()
         run: docker compose logs
