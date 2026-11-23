@@ -22,6 +22,7 @@ Clojure で Web API を作るときの土台を、すぐ動く状態でまとめ
 | --- | --- | --- |
 | [`main`](https://github.com/ike-keichan/sandbox-clojure) | 最小の形。API は、動作の確認用の `GET /api/hello` だけ | 新しいプロジェクトの出発点にします |
 | [`example/task-api`](https://github.com/ike-keichan/sandbox-clojure/tree/example/task-api) | `main` に、タスクを管理する API を足した見本 | 機能の足し方の手本にします |
+| [`example/table-formatter`](https://github.com/ike-keichan/sandbox-clojure/tree/example/table-formatter) | `main` に、Markdown の表を整形するプログラムを足した見本 | API ではなく、コマンドとして実行するプログラムの手本にします |
 
 `README.md` と、`readme/` の番号つきの文書は、どのブランチでも同じ内容です。`example/` で始まるブランチには、そのブランチの説明（`readme/EXAMPLE_*.md`）が入っています。
 
