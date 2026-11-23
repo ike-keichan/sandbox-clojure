@@ -170,6 +170,8 @@ make clj/test
 - コマンドを足したら、`.PHONY` の行にも足し、`readme/02_COMMAND.md` に説明を書く。主なコマンドなら、`README.md` の表にも足す。
 - コマンドの名前は、対象を先に書く（`clj/test`、`db/migrate`）。
 - コマンドの直前に、何をするかを日本語のコメントで書く。
+- コンテナは、手元のパソコンと同じユーザーで動かす（`Makefile` が、ユーザーの番号を `HOST_UID`、`HOST_GID` として渡す）。コンテナを起動するコマンドは、`docker compose` を直接実行せず、`make` に足して、そこから実行する。自動テストの設定（`.github/workflows/`）でも、同じにする。
+- Java は、ホームディレクトリを、環境変数の `HOME` ではなく、ユーザーの登録の情報から調べる。`Dockerfile` の `LEIN_JVM_OPTS` と `JVM_OPTS` で、場所を直接伝えている（`-Duser.home`）。この設定を消すと、ライブラリの置き場所が決まらなくなる。
 
 ### 秘密の情報
 

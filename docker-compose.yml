@@ -3,9 +3,13 @@ services:
     build: .
     # 止めるときの合図（SIGTERM）が、Java まで届くようにする。付けないと、止まるまで10秒ほど待たされる。
     init: true
+    # 手元のパソコンと同じユーザーで動かす。番号は、Makefile が調べて渡す。
+    # root で動かすと、Linux では、コンテナが作ったファイル（target、.clj-kondo/.cache など）が
+    # root の持ち物になり、手元で消せなくなる。
+    user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
     volumes:
       - .:/app
-      - m2_data:/root/.m2
+      - m2_repo:/home/app/.m2
     ports:
       # 手元のパソコンからだけつなげるように、127.0.0.1 を付ける。
       # 付けないと、同じネットワークのほかの機器からもつなげてしまう。
@@ -47,4 +51,4 @@ services:
       start_period: 10s
 volumes:
   mysql_data:
-  m2_data:
+  m2_repo:
